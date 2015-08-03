@@ -1,7 +1,7 @@
 function [opt_pol] = opt_small_battery(Sdata,t,state,prices)
 % Function computes the optimal policy for small battery
 % Input
-%     Sdata : struct holding everything
+%     Sdata : struct holding D, C, expected prices and wind (uniformly distributed) statistics
 %     t : time index we're at
 %     prices: [pf pb ps] right now
 %     state : [w;b ; states(newest:oldest)] 

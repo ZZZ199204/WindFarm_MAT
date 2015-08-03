@@ -8,21 +8,26 @@ classdef pol_sim
         rt_sd_ct_bat;
         C;
         ramping;
-        D;
-        L;
+        D; %Period
+        L; % Number of observations
+        eta_p; %efficiency while charging
+        eta_n; %efficiency while discharging
     end
     
     methods
-        function obj = pol_sim(D,L,Cin,state_initial,batinitial,ramping)
+        function obj = pol_sim(D,L,Cin,state_initial,batinitial,ramping,etas)
         % constructor
-            if nargin<4
+            if ~exist('state_initial','var')
                 state_initial=zeros(D,1);
             end
-            if nargin<5
+            if ~exist('batinitial','var')
                 batinitial=0;
             end
-            if nargin<6
+            if ~exist('Cin','var')
                 ramping=Cin;
+            end
+            if ~exist('etas','var')
+                etas = [1 1]; %charging and discharging perfectly
             end
             obj.D=D;
             obj.state = flipud(state_initial);
@@ -32,6 +37,8 @@ classdef pol_sim
             obj.C = Cin;
             obj.ramping=ramping;
             obj.L=L;
+            obj.eta_p = etas(1);
+            obj.eta_n = etas(2);
         end
        
         function obj = update(obj,pol,wind,prices,i)
@@ -47,7 +54,7 @@ classdef pol_sim
             else
                 st=0;
             end
-            rt = btp1 - obj.battery - wind + obj.state(end); 
+            rt = max(obj.eta_p*(btp1 - obj.battery),obj.eta_n*(btp1-obj.battery)) - wind + obj.state(end); 
             obj.profit(i) = prices(1)*st - max(rt*prices(2),rt*prices(3));
             obj.rt_sd_ct_bat(i,:) = [rt st btp1-obj.battery obj.battery];
             obj.state(2:end) = obj.state(1:end-1);

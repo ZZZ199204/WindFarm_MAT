@@ -13,10 +13,9 @@ sdata_file=['real_data/Sdata_',opt];
 
 % [winAR,~] = genStatsAR();
 
-M = load(data_file);
-
-wind = M(:,1);
-prices = M(:,2:4);
+Mdata = load(data_file);
+wind = Mdata(:,1);
+prices = Mdata(:,2:4);
 
 
 if ~exist('capacity','var')
@@ -28,15 +27,15 @@ end
 if ~exist('D','var')
     D=4;
 end
+if ~exist('L','var'); L = 240; end
+if ~exist('beta','var'); beta=0.99; end
 
-L = 240;
-% L = 40;
-beta = 0.99; discount = beta.^[0:L-1];
+discount = beta.^[0:L-1];
 batinitial = 0;
  
 beta2 = 1;
-M = 10;
-no_of_sims = 30;
+if ~exist('M','var'); M = 10; end
+if ~exist('no_of_sims','var'); no_of_sims = 30; end
 
 % Fitting quadratics for the LQG
 wind_LQR = load(wind_file);
