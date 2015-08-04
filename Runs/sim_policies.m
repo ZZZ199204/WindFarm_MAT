@@ -1,10 +1,5 @@
-if ~exist('opt','var')
-    opt='sb';
-end
-    
-if ~exist('results_file','var')
-    results_file='temp';
-end
+if ~exist('opt','var'); opt='sb'; end
+if ~exist('results_file','var'); results_file='temp'; end
 
 wind_file=['real_data/wind_',opt,'.csv'];
 prices_file=['real_data/price_',opt,'.csv'];
@@ -18,18 +13,13 @@ wind = Mdata(:,1);
 prices = Mdata(:,2:4);
 
 
-if ~exist('capacity','var')
-    capacity = 0:50:150;
-end
-if ~exist('realizations','var')
-    realizations = 1;
-end
-if ~exist('D','var')
-    D=4;
-end
+if ~exist('capacity','var'); capacity = 0:50:150; end
+if ~exist('realizations','var'); realizations = 1; end
+if ~exist('D','var'); D=4; end
 if ~exist('L','var'); L = 240; end
-if ~exist('beta','var'); beta=0.99; end
-
+if ~exist('beta','var'); beta=0.999; end
+if ~exist('etas','var'); etas=[1 1]; end
+if ~exist('ramping','var'); ramping = 1; end
 discount = beta.^[0:L-1];
 batinitial = 0;
  
@@ -61,12 +51,14 @@ prof = zeros(length(capacity),9);
 
 for cap_ind = 1:length(capacity)
     C = capacity(cap_ind)
+    ramping_C = ramping*C;
     Sdata.C=C;
     
     % LQG policy
     [opt_pol_LQR,val_LQR,c] = opt_val_LQG(D,Th,price_LQR,wind_LQR,C,beta,5/(C+1));
-    lin_mat = modelpcGenerator(M,D,prices_stats,wind_stats,C,beta,no_of_sims,val_LQR);
-
+%     lin_mat = modelpcGenerator(M,D,prices_stats,wind_stats,C,beta,no_of_sims,val_LQR);
+    MPCParams = struct('M',M,'D',D,'C',C,'ramping',ramping_C,'no_of_sims',no_of_sims,'beta',beta,'L',L,'price_stats',price_stats,'wind_stats',wind_stats,'etas',etas);
+    lin_mat = MPCGeneratorEfficiency(MPCParams,val_LQR);
     profind2=zeros(realizations,9);
 %     a11=zeros(L,realizations);
 %     a12=zeros(size(a11));
@@ -74,8 +66,8 @@ for cap_ind = 1:length(capacity)
 %     a14=zeros(size(a11));
     parfor ind2=0:(realizations-1)
         ind2
-        lqg_la = pol_sim(D,L,C,contract_initial,0);
-        sb_pol = pol_sim(D,L,C,contract_initial,0);
+        lqg_la = pol_sim(D,L,Cin,contract_initial,batinitial,ramping_C,etas);
+        sb_pol = pol_sim(D,L,Cin,contract_initial,batinitial,ramping_C,etas);
         
     for ind = 1:L
         t_F = mod(ind-1,D);
@@ -111,7 +103,7 @@ for cap_ind = 1:length(capacity)
 
     %Genie Policy
     [batp1,st,profit_detail,rt_market,temp1,~] = genie (wind(ind2*L+1:(ind2+1)*L),...
-        prices(ind2*L+1:(ind2+1)*L,:),D,C,beta,batinitial,contract_initial);   
+        prices(ind2*L+1:(ind2+1)*L,:),D,C,beta,batinitial,contract_initial,ramping_C,etas);   
     
 % %     if temp1 > 1e10
 %         a11(:,ind2+1)=rt_market; a12(:,ind2+1)=profit_detail; a13(:,ind2+1)=st; a14(:,ind2+1)=batp1;
