@@ -1,10 +1,10 @@
 if ~exist('opt','var'); opt='sb'; end
 if ~exist('results_file','var'); results_file='temp'; end
 
-wind_file=['real_data/wind_',opt,'.csv'];
-prices_file=['real_data/price_',opt,'.csv'];
-data_file=['real_data/sample_',opt,'.csv'];
-sdata_file=['real_data/Sdata_',opt];
+wind_file=['Input/wind_',opt,'.csv'];
+prices_file=['Input/price_',opt,'.csv'];
+data_file=['Input/sample_',opt,'.csv'];
+sdata_file=['Input/Sdata_',opt];
 
 % [winAR,~] = genStatsAR();
 

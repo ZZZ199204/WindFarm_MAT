@@ -14,15 +14,15 @@ function lin_mat = MPCGeneratorEfficiency(MPCParams,val_LQR)
 % Output: lin_mat 
 
 %% Some Defaults
-if ~field('MPCParams','no_of_sims');MPCParams.no_of_sims =1 ; end; no_of_sims = MPCParams.no_of_sims;
-if ~field('MPCParams','M'); MPCParams.M = 10; end; M = MPCParams.M;
-if ~field('MPCParams','D'); MPCParams.D = 4; end; D = MPCParams.D;
-if ~field('MPCParams','price_stats'); MPCParams.price_stats = ones((M+1)*no_of_sims,1)*[2 3 1]; end; price_stats=MPCParams.price_stats;
-if ~field('MPCParams','wind_stats'); MPCParams.wind_stats = ones((M+1)*no_of_sims,1); end; wind_stats=MPCParams.wind_stats;
-if ~field('MPCParams','C'); MPCParams.C = 10; end; C = MPCParams.C;
-if ~field('MPCParams','beta'); MPCParams.beta = 0.99; end; beta=MPCParams.beta;
-if ~field('MPCParams','etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.etas;
-if ~field('MPCParams','ramping'); MPCParams.ramping = C; end; ramping = MPCParams.C;
+if ~isfield(MPCParams,'no_of_sims');MPCParams.no_of_sims =1 ; end; no_of_sims = MPCParams.no_of_sims;
+if ~isfield(MPCParams,'M'); MPCParams.M = 10; end; M = MPCParams.M;
+if ~isfield(MPCParams,'D'); MPCParams.D = 4; end; D = MPCParams.D;
+if ~isfield(MPCParams,'price_stats'); MPCParams.price_stats = ones((M+1)*no_of_sims,1)*[2 3 1]; end; price_stats=MPCParams.price_stats;
+if ~isfield(MPCParams,'wind_stats'); MPCParams.wind_stats = ones((M+1)*no_of_sims,1); end; wind_stats=MPCParams.wind_stats;
+if ~isfield(MPCParams,'C'); MPCParams.C = 10; end; C = MPCParams.C;
+if ~isfield(MPCParams,'beta'); MPCParams.beta = 0.99; end; beta=MPCParams.beta;
+if ~isfield(MPCParams,'etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.etas;
+if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.C;
 
 %% Initializing the matrix
 lin_mat = cell(D,6);

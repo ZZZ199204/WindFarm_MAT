@@ -16,9 +16,7 @@ function pol = modelpclinear(M,t,y_state,price_state,D,lin_mat,no_of_sims)
 %   min sum beta^t*[-pf st + l_t] + beta^M [1/2 y_{t+M}' P y_{t+M} + p'y_{t+M} + r]
 %   s.t. p(b|s)_t [s_{t-D} + eta_(p|n)*(bp_t - bp_{t-1}) - w_t] <= l_t
 
-if nargin<7
-    no_of_sims=1;
-end
+if ~exist('no_of_sims','var'); no_of_sims=1; end;
 
 options = optimset('LargeScale','on','Display','off');
 
