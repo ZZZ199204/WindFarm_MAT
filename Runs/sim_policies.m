@@ -53,8 +53,12 @@ for cap_ind = 1:length(capacity)
         'beta',beta,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
         'state_initial',contract_initial,'batinitial',batinitial);
     
-    lin_mat = MPCGeneratorEfficiency(sysParams,val_LQR);
-%     lin_mat = modelpcGenerator(sysParams,val_LQR);
+    if (etas(1)>1+1e-5) || (ramping<1-1e-5)
+        lin_mat = MPCGeneratorEfficiency(sysParams,val_LQR);
+    else
+        lin_mat = modelpcGenerator(sysParams,val_LQR);
+    end
+    
     profind2=zeros(realizations,9);
 
     parfor ind2=0:(realizations-1)
@@ -85,14 +89,20 @@ for cap_ind = 1:length(capacity)
     prof(cap_ind,:) = sum(profind2,1)/realizations;
 end
 
-if ~exist('fResult','var')
-    fResult = fopen(results_file,'w');
-    fprintf(fResult,'C\tG\tM\tS\tGr\tMr\tSr\tGc\tMc\tSc\n');
-    fclose(fResult);
-end
-
+% if length(capacity)>=2
+%     asymptote = min(prof(1,3)+(prof(2,3)-prof(1,3))/(capacity(2)-capacity(1))*(capacity-capacity(1)),prof(:,1));
+% else
+%     asymptote = prof(1,1);
+% end
+% if exist('overwrite','var')
+%     if (overwrite==1)
+%         fResult = fopen(results_file,'w');
+%          fprintf(fResult,'C\tG\tM\tS\tGr\tMr\tSr\tGc\tMc\tSc\tA\n');
+%         fclose(fResult);
+%     end
+% end
+% dlmwrite(results_file,[capacity' prof asymptote],'delimiter','\t','-append');
 dlmwrite(results_file,[capacity' prof],'delimiter','\t','-append');
-
 %% Crap
 % [winAR,~] = genStatsAR();
 %     lin_mat =

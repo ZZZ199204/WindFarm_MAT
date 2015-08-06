@@ -1,13 +1,13 @@
 init;
 
-realizations=16; 
+realizations=8; 
 opt='4_1';
-capacity = [0 1e-2 linspace(1,150,7)];
+capacity = [0 linspace(1,150,6) linspace(200,500,3)];
 D = 4;
 L = 240;
 beta=0.99;
 M=10;
-no_of_sims=30;
+no_of_sims=25;
 
 etas_array = [1 1; 1.1 0.9; 1.2 0.8; 1.5 0.5];
 
