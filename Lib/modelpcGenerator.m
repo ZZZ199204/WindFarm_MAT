@@ -1,8 +1,31 @@
-function lin_mat = modelpcGenerator(M,D,price_stats,wind_stats,C,beta,no_of_sims,val_LQR)
+function lin_mat = modelpcGenerator(MPCParams,val_LQR)%(M,D,price_stats,wind_stats,C,beta,no_of_sims,val_LQR)
+% Function generates helpful linear matrices for solving stochastic MPC
+% Input: MPCParams struct holding
+%   M - lookahead
+%   D - period
+%   prices_stats - example lookahead price values
+%   wind_stats - example lookahead wind values
+%   C - capacity
+%   beta - discount factor
+%   no_of_sims - Number of parallel look ahead paths
+%   ramping - ramping constraint
+%   etas - efficiency values
+% val_LQR : struct holding value function in quadratic form
+% Output: lin_mat 
 
-if nargin<7
-    no_of_sims =1 ;
-end
+%% Some Defaults
+if ~isfield(MPCParams,'no_of_sims');MPCParams.no_of_sims =1 ; end; no_of_sims = MPCParams.no_of_sims;
+if ~isfield(MPCParams,'M'); MPCParams.M = 10; end; M = MPCParams.M;
+if ~isfield(MPCParams,'D'); MPCParams.D = 4; end; D = MPCParams.D;
+if ~isfield(MPCParams,'prices_stats'); MPCParams.prices_stats = ones((M+1)*no_of_sims,1)*[2 3 1]; end; price_stats=MPCParams.prices_stats;
+if ~isfield(MPCParams,'wind_stats'); MPCParams.wind_stats = ones((M+1)*no_of_sims,1); end; wind_stats=MPCParams.wind_stats;
+if ~isfield(MPCParams,'C'); MPCParams.C = 10; end; C = MPCParams.C;
+if ~isfield(MPCParams,'beta'); MPCParams.beta = 0.99; end; beta=MPCParams.beta;
+if ~isfield(MPCParams,'etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.etas;
+if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.ramping;
+if (C==0); C=1e-5; end
+if (ramping==0); ramping = 1e-5; end
+
 
 lin_mat = cell(D,6);
 
@@ -52,7 +75,7 @@ for t_start = 1:D
     prices_est(1:3:3*no_of_sims,1:D) = 0;
     f_st = [-prices_est(1:3:3*no_of_sims,:).*repmat(discount,[no_of_sims,1]) , zeros(no_of_sims,D)]; %From the objective futures market
     f_btp = zeros(no_of_sims,1);
-    if nargin==8
+    if exist('val_LQR','var')
         p = val_LQR{mod(t_start+M-1,D)+1,2}'*beta^M;
         f_st(:,1:D) = repmat(p(3:end),[no_of_sims,1]);
         f_btp = repmat(p(2),[no_of_sims,1]);

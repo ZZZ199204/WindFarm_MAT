@@ -10,35 +10,30 @@ classdef pol_sim
         ramping;
         D; %Period
         L; % Number of observations
-        eta_p; %efficiency while charging
-        eta_n; %efficiency while discharging
+        etas; %efficiency while [charging discharging]
     end
     
     methods
-        function obj = pol_sim(D,L,Cin,state_initial,batinitial,ramping,etas)
+        function obj = pol_sim(params)
         % constructor
-            if ~exist('state_initial','var')
-                state_initial=zeros(D,1);
-            end
-            if ~exist('batinitial','var')
-                batinitial=0;
-            end
-            if ~exist('Cin','var')
-                ramping=Cin;
-            end
-            if ~exist('etas','var')
-                etas = [1 1]; %charging and discharging perfectly
-            end
-            obj.D=D;
-            obj.state = flipud(state_initial);
-            obj.battery = batinitial;
-            obj.profit = zeros(L,1);
-            obj.rt_sd_ct_bat = zeros(L,4);
-            obj.C = Cin;
-            obj.ramping=ramping;
-            obj.L=L;
-            obj.eta_p = etas(1);
-            obj.eta_n = etas(2);
+            if ~exist('params','var'); params=struct; end
+            if ~isfield(params,'D'); params.D = 4; end
+            if ~isfield(params,'L'); params.L = 240; end
+            if ~isfield(params,'C'); params.C = 10; end
+            if ~isfield(params,'state_initial'); params.state_initial = zeros(params.D,1); end
+            if ~isfield(params,'batinitial'); params.batinitial = 0; end
+            if ~isfield(params,'ramping'); params.ramping = params.C; end
+            if ~isfield(params,'etas'); params.etas = [1 1]; end
+            
+            obj.D=params.D;
+            obj.state = flipud(params.state_initial);
+            obj.battery = params.batinitial;
+            obj.profit = zeros(params.L,1);
+            obj.rt_sd_ct_bat = zeros(params.L,4);
+            obj.C = params.C;
+            obj.ramping=params.ramping;
+            obj.L=params.L;
+            obj.etas = params.etas;
         end
        
         function obj = update(obj,pol,wind,prices,i)
@@ -54,7 +49,7 @@ classdef pol_sim
             else
                 st=0;
             end
-            rt = max(obj.eta_p*(btp1 - obj.battery),obj.eta_n*(btp1-obj.battery)) - wind + obj.state(end); 
+            rt = max(obj.etas(1)*(btp1 - obj.battery),obj.etas(2)*(btp1-obj.battery)) - wind + obj.state(end); 
             obj.profit(i) = prices(1)*st - max(rt*prices(2),rt*prices(3));
             obj.rt_sd_ct_bat(i,:) = [rt st btp1-obj.battery obj.battery];
             obj.state(2:end) = obj.state(1:end-1);

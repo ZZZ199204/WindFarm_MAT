@@ -3,7 +3,7 @@ function lin_mat = MPCGeneratorEfficiency(MPCParams,val_LQR)
 % Input: MPCParams struct holding
 %   M - lookahead
 %   D - period
-%   price_stats - example lookahead price values
+%   prices_stats - example lookahead price values
 %   wind_stats - example lookahead wind values
 %   C - capacity
 %   beta - discount factor
@@ -17,13 +17,14 @@ function lin_mat = MPCGeneratorEfficiency(MPCParams,val_LQR)
 if ~isfield(MPCParams,'no_of_sims');MPCParams.no_of_sims =1 ; end; no_of_sims = MPCParams.no_of_sims;
 if ~isfield(MPCParams,'M'); MPCParams.M = 10; end; M = MPCParams.M;
 if ~isfield(MPCParams,'D'); MPCParams.D = 4; end; D = MPCParams.D;
-if ~isfield(MPCParams,'price_stats'); MPCParams.price_stats = ones((M+1)*no_of_sims,1)*[2 3 1]; end; price_stats=MPCParams.price_stats;
+if ~isfield(MPCParams,'prices_stats'); MPCParams.prices_stats = ones((M+1)*no_of_sims,1)*[2 3 1]; end; prices_stats=MPCParams.prices_stats;
 if ~isfield(MPCParams,'wind_stats'); MPCParams.wind_stats = ones((M+1)*no_of_sims,1); end; wind_stats=MPCParams.wind_stats;
 if ~isfield(MPCParams,'C'); MPCParams.C = 10; end; C = MPCParams.C;
 if ~isfield(MPCParams,'beta'); MPCParams.beta = 0.99; end; beta=MPCParams.beta;
 if ~isfield(MPCParams,'etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.etas;
-if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.C;
-
+if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.ramping;
+if (C==0); C=1e-5; end
+if (ramping==0); ramping = 1e-5; end
 %% Initializing the matrix
 lin_mat = cell(D,6);
 
@@ -36,7 +37,7 @@ for t_start = 1:D
         wt = [wind_stats(t_start:D); wind_stats(1:t_start-1)]';
         wt = repmat(wt,[1,ceil(M/D)+1]);
         wt = wt(1:M+1);
-        prices_est = [price_stats(t_start:D,:); price_stats(1:t_start-1,:)]';
+        prices_est = [prices_stats(t_start:D,:); prices_stats(1:t_start-1,:)]';
         prices_est = repmat(prices_est,[1,ceil(M/D)]);
         prices_est = prices_est(:,1:M);
         wt = fliplr(wt);
@@ -45,7 +46,7 @@ for t_start = 1:D
     else
         for ind = 1:no_of_sims
             wt(ind,:) = fliplr([wind_stats((ind-1)*M+t_start:ind*M+1); wind_stats((ind-1)*M+1:(ind-1)*M+t_start-1)]');
-            prices_est(3*(ind-1)+1:3*ind,:) = fliplr([price_stats((ind-1)*M+t_start:ind*M,:); price_stats((ind-1)*M+1:(ind-1)*M+t_start-1,:)]');
+            prices_est(3*(ind-1)+1:3*ind,:) = fliplr([prices_stats((ind-1)*M+t_start:ind*M,:); prices_stats((ind-1)*M+1:(ind-1)*M+t_start-1,:)]');
         end
     end
     discount = fliplr(beta.^[0:M-1]);
@@ -53,7 +54,7 @@ for t_start = 1:D
 
     % x=[l_{M-1} -> l_{0} , bp_{M-1} -> bp_{-1} ,s_{M-1} -> s_{-D} ]
     lb_mpc = [-inf*ones(1,M), zeros(1,M+1+M+D)]'; %Lower and upper bounds
-    ub_mpc = [inf*ones(1,M), C*ones(1,M+1) , 400*ones(1,M+D)]';
+    ub_mpc = [inf*ones(1,M), C*ones(1,M+1) , 1e3*ones(1,M+D)]';
     lb_mpc = repmat(lb_mpc,[no_of_sims,1]);
     ub_mpc = repmat(ub_mpc,[no_of_sims,1]);
 
@@ -73,7 +74,7 @@ for t_start = 1:D
     prices_est(1:3:3*no_of_sims,1:D) = 0;
     f_st = [-prices_est(1:3:3*no_of_sims,:).*repmat(discount,[no_of_sims,1]) , zeros(no_of_sims,D)]; %From the objective futures market
     f_btp = zeros(no_of_sims,1);
-    if nargin==8
+    if exist('val_LQR','var')
         p = val_LQR{mod(t_start+M-1,D)+1,2}'*beta^M;
         f_st(:,1:D) = repmat(p(3:end),[no_of_sims,1]);
         f_btp = repmat(p(2),[no_of_sims,1]);
@@ -88,7 +89,7 @@ for t_start = 1:D
     A_mpc = zeros(4*M*no_of_sims,(3*M+1+D)*no_of_sims); 
     b_mpc = zeros(4*M*no_of_sims,1);
     A_mpc_ramping = zeros(2*M*no_of_sims,(3*M+1+D)*no_of_sims);
-    b_mpc_ramping = repmat(ramping*[ones(M,1);-ones(M,1)],[no_of_sims 1]);
+    b_mpc_ramping = repmat(ramping*[ones(M,1);ones(M,1)],[no_of_sims 1]);
     for ind=1:no_of_sims
         b_mpc((ind-1)*4*M+1:ind*4*M) = repmat(wt(ind,2:M+1)',[4 1]); %Buying price is less than l_t , selling price
         

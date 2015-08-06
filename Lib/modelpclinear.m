@@ -48,6 +48,10 @@ end
 beq_mpc = [repmat(y_state(2:end),[no_of_sims,1]);zeros(2*(no_of_sims-1),1)];
 
 [x_mpc,~,exflag] = linprog(f_mpc,A_mpc,b_mpc,lin_mat{t_start,4},beq_mpc,lin_mat{t_start,5},lin_mat{t_start,6},[],options);
+try
 pol = [x_mpc(2*M) ; x_mpc(3*M+1)];
+catch
+    exflag
+end
         
 end
