@@ -1,9 +1,9 @@
 clc; clear all; 
-D=24; 
-D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
+D=1; 
+D2=4; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
 days=360;
 L = days*D2*D; 
-realizations = 8;
+realizations = 16;
 %% For 24 hour periods statistics - collecting over one year and averaging.
 
 fpWind = fopen('../Input/Raw/Wind.csv','r'); fgetl(fpWind);

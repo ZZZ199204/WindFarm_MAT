@@ -2,13 +2,13 @@ init;
 
 realizations=16; 
 opt='1_4';
-capacity = [0 linspace(1e-2,20,7) linspace(20,150,7) linspace(200,500,4)];
+capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 D = 4;
-L = 240;
+L = 360*D;
 beta=0.99;
 M=10;
 no_of_sims=30;
-results_file=sprintf('results/%s_results.txt',opt);
+results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
 sim_policies
 
 %% crap
