@@ -30,6 +30,9 @@ Th = 1e4;
 prices_stats = [Sdata.Eprices; prices(L*realizations+1:end,:)];
 wind_stats = [wind_LQR(:,1);wind(L*realizations+1:end,:)];
 
+wind = reshape(wind(1:L*realizations),L,realizations);
+prices = permute(reshape(prices(1:L*realizations,:),L,realizations,3),[1 3 2]);
+
 if ~exist('contract_initial','var')
     contract_initial = zeros(D,1);
     for ind=1:D
@@ -41,6 +44,10 @@ end
 %% Running the main simulations
 prof = zeros(length(capacity),9);
 
+sysParams = struct('M',M,'D',D,'no_of_sims',no_of_sims,...
+    'beta',beta,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
+    'state_initial',contract_initial,'batinitial',batinitial);
+    
 for cap_ind = 1:length(capacity)
     C = capacity(cap_ind)
     ramping_C = ramping*C;
@@ -48,11 +55,8 @@ for cap_ind = 1:length(capacity)
     
     % LQG policy
     [opt_pol_LQR,val_LQR,~] = opt_val_LQG(D,Th,prices_LQR,wind_LQR,C,beta,5/(C+1));
-
-    sysParams = struct('M',M,'D',D,'C',C,'ramping',ramping_C,'no_of_sims',no_of_sims,...
-        'beta',beta,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
-        'state_initial',contract_initial,'batinitial',batinitial);
     
+    sysParams.C=C;sysParams.ramping=ramping_C;
     if (etas(1)>1+1e-5) || (ramping<1-1e-5)
         lin_mat = MPCGeneratorEfficiency(sysParams,val_LQR);
     else
@@ -61,28 +65,26 @@ for cap_ind = 1:length(capacity)
     
     profind2=zeros(realizations,9);
 
-    parfor ind2=0:(realizations-1)
-        ind2
+    parfor iRealizations=1:realizations
+        iRealizations
         lqg_la = pol_sim(sysParams);
         sb_pol = pol_sim(sysParams);
-        
+        wind_realization = wind(:,iRealizations);
+        prices_realization = prices(:,:,iRealizations);
+      
         for ind = 1:L
-            t_F = mod(ind-1,D);
-            indc = ind2*L+ind;
-
             %Implementing any step lookahead verification
-            temp = modelpclinear(M,ind-1,[wind(indc);lqg_la.battery;lqg_la.state],prices(indc,:),D,lin_mat,no_of_sims);
-            lqg_la=lqg_la.update(temp,wind(indc),prices(indc,:),ind);
+            temp = modelpclinear(M,ind-1,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,no_of_sims);
+            lqg_la=lqg_la.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
 
             %Implementing the small battery policy
-            temp = opt_small_battery(Sdata,ind-1,[wind(indc);sb_pol.battery;sb_pol.state],prices(indc,:));
-            sb_pol = sb_pol.update(temp,wind(indc),prices(indc,:),ind);
+            temp = opt_small_battery(Sdata,ind-1,[wind_realization(ind);sb_pol.battery;sb_pol.state],prices_realization(ind,:));
+            sb_pol = sb_pol.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
          end
-
         %Genie Policy
-        genieOut = genie (wind(ind2*L+1:(ind2+1)*L),prices(ind2*L+1:(ind2+1)*L,:),sysParams);   
+        genieOut = genie (wind_realization,prices_realization,sysParams);   
         
-        profind2(ind2+1,:) = [genieOut.tot_profit discount*[lqg_la.profit sb_pol.profit ...
+        profind2(iRealizations,:) = [genieOut.tot_profit discount*[lqg_la.profit sb_pol.profit ...
             abs([genieOut.rt_market lqg_la.rt_sd_ct_bat(:,1) sb_pol.rt_sd_ct_bat(:,1)]) ...
             genieOut.st lqg_la.rt_sd_ct_bat(:,2) sb_pol.rt_sd_ct_bat(:,2)]];
     end
