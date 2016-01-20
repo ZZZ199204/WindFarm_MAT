@@ -1,3 +1,18 @@
+%% Running the experiment with real data
+init;
+
+realizations=6; 
+opt='r4_1';
+capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
+
+D = 4;
+L = 60*D;
+beta=0.99;
+M=20;
+no_of_sims=3;
+error_const=0.3;
+results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
+%%
 if ~exist('opt','var'); opt='4'; end
 if ~exist('results_file','var'); results_file='temp'; end
 if ~exist('capacity','var'); capacity = 0:50:150; end
@@ -33,6 +48,8 @@ wind_stats = [wind_LQR(:,1);wind(L*realizations+1:end,:)];
 wind = reshape(wind(1:L*realizations),L,realizations);
 prices = permute(reshape(prices(1:L*realizations,:),L,realizations,3),[1 3 2]);
 
+
+
 if ~exist('contract_initial','var')
     contract_initial = zeros(D,1);
     for ind=1:D
@@ -57,28 +74,56 @@ for cap_ind = 1:length(capacity)
     [opt_pol_LQR,val_LQR,~] = opt_val_LQG(D,Th,prices_LQR,wind_LQR,C,beta,5/(C+1));
     
     sysParams.C=C;sysParams.ramping=ramping_C;
-    if (etas(1)>1+1e-5) || (ramping<1-1e-5)
-        lin_mat = MPCGeneratorEfficiency(sysParams,val_LQR);
-    else
-        lin_mat = modelpcGenerator(sysParams,val_LQR);
-    end
+%     if (etas(1)>1+1e-5) || (ramping<1-1e-5)
+%         lin_mat = MPCGeneratorEfficiency(sysParams,val_LQR);
+%     end
+        
+    
     
     profind2=zeros(realizations,9);
 
     parfor iRealizations=1:realizations
         iRealizations
+
+        lin_mat = modelpcGenerator(sysParams,val_LQR);
+        MPCParams = sysParams;
+        SdataR = Sdata;
         lqg_la = pol_sim(sysParams);
         sb_pol = pol_sim(sysParams);
         wind_realization = wind(:,iRealizations);
         prices_realization = prices(:,:,iRealizations);
       
-        for ind = 1:L
+        for ind = 1:L-D
+            
+            % generating wrong prediction values
+            wind_pred_unif = wind_realization(ind:min(ind+1+M,end)); %lower and upper limit
+            Miter = size(wind_pred_unif,1)-1;
+            price_pred = prices_realization(ind:min(ind+M+1,end),:);
+            error_pred = error_const*ones(size(wind_pred_unif)); error_pred(1:D+1)=linspace(0,error_const,D+1);
+            
+            wind_pred_unif = (1+(2*rand(size(wind_pred_unif))-1).*error_pred).*wind_pred_unif; %generating the means
+            wind_pred_unif = [max(wind_pred_unif.*(1-error_pred),0) wind_pred_unif.*(1+error_pred)];
+            
+            price_sd = repmat(error_pred,1,3);
+            price_mean = price_pred.*(1+randn(size(price_pred)).*repmat(error_pred,1,3));
+            
             %Implementing any step lookahead verification
-            temp = modelpclinear(M,ind-1,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,no_of_sims);
+            MPCParams.M = Miter;
+            MPCParams.wind_stats = reshape(rand(Miter+1,MPCParams.no_of_sims).*...
+                repmat(wind_pred_unif(:,2)-wind_pred_unif(:,1),1,MPCParams.no_of_sims)+...
+                repmat(wind_pred_unif(:,1),1,MPCParams.no_of_sims),[],1);
+            MPCParams.prices_stats = reshape(permute(repmat(price_mean,[1 1 MPCParams.no_of_sims])+...
+                randn(MPCParams.M+1,3,MPCParams.no_of_sims).*repmat(price_sd,[1 1 MPCParams.no_of_sims]),[1 3 2]),[],3);
+            MPCParams.state_initial = lqg_la.state;
+            MPCParams.batinitial = lqg_la.battery;
+            lin_mat = modelpcGenerator(MPCParams,val_LQR,1);
+            temp = modelpclinear(MPCParams.M,0,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,no_of_sims);
             lqg_la=lqg_la.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
 
             %Implementing the small battery policy
-            temp = opt_small_battery(Sdata,ind-1,[wind_realization(ind);sb_pol.battery;sb_pol.state],prices_realization(ind,:));
+            SdataR.Eprices(1,:) = price_mean(D+1,:);
+            SdataR.wind_unif(1,:) = wind_pred_unif(D+1,:);
+            temp = opt_small_battery(SdataR,0,[wind_realization(ind);sb_pol.battery;sb_pol.state],prices_realization(ind,:));
             sb_pol = sb_pol.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
          end
         %Genie Policy
@@ -92,7 +137,7 @@ for cap_ind = 1:length(capacity)
 end
 
 if length(capacity)>=2
-    asymptote = min(prof(1,3)+(prof(2,3)-prof(1,3))/(capacity(2)-capacity(1))*(capacity-capacity(1)),prof(:,1));
+    asymptote = min(prof(1,3)+(prof(2,3)-prof(1,3))/(capacity(2)-capacity(1))*(capacity'-capacity(1)),prof(:,1));
 else
     asymptote = prof(1,1);
 end
@@ -126,8 +171,8 @@ dlmwrite(results_file,[capacity' prof asymptote],'delimiter','\t','-append');
 %         dis_la=dis_la.update(temp,wind(indc),prices(indc,:),ind);
 
 % discrete = load('results/sims_line');
-% plot(capacity,prof); hold on; 
+ plot(capacity, prof(:,1:3)); 
 % plot(discrete(:,1),-discrete(:,2));
-% legend('Clairvoyant','MPC','SB');
+ legend('Clairvoyant','MPC','SB');
 % xlabel('Capacity')
 % ylabel('Discounted profit')

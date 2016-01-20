@@ -26,7 +26,7 @@ if (C==0); C = 1e-3; end
 %% running the genie optimization
 
     discount = beta.^(0:L-1);
-    
+        
     cvx_begin quiet
         variables st(L,1) btp1(L,1)
         dual variable dual_ramp

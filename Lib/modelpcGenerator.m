@@ -1,4 +1,4 @@
-function lin_mat = modelpcGenerator(MPCParams,val_LQR)%(M,D,price_stats,wind_stats,C,beta,no_of_sims,val_LQR)
+function lin_mat = modelpcGenerator(MPCParams,val_LQR,D_real)%(M,D,price_stats,wind_stats,C,beta,no_of_sims,val_LQR)
 % Function generates helpful linear matrices for solving stochastic MPC
 % Input: MPCParams struct holding
 %   M - lookahead
@@ -11,6 +11,7 @@ function lin_mat = modelpcGenerator(MPCParams,val_LQR)%(M,D,price_stats,wind_sta
 %   ramping - ramping constraint
 %   etas - efficiency values
 % val_LQR : struct holding value function in quadratic form
+% D_real: default is D. For real data, D_real=1;
 % Output: lin_mat 
 
 %% Some Defaults
@@ -25,14 +26,15 @@ if ~isfield(MPCParams,'etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.eta
 if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.ramping;
 if (C==0); C=1e-5; end
 if (ramping==0); ramping = 1e-5; end
+if ~exist('D_real','var'); D_real=D; end;
 
 
-lin_mat = cell(D,6);
+lin_mat = cell(D_real,6);
 
 wt = zeros(no_of_sims,M+1);
 prices_est = zeros(no_of_sims*3,M);
 
-for t_start = 1:D
+for t_start = 1:D_real
     
     if no_of_sims == 1
         wt = [wind_stats(t_start:D); wind_stats(1:t_start-1)]';

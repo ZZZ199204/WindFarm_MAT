@@ -1,9 +1,9 @@
 clc; clear all; 
-D=1; 
-D2=4; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
-days=360;
+D=4; 
+D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
+days=60;
 L = days*D2*D; 
-realizations = 16;
+realizations = 6;
 %% For 24 hour periods statistics - collecting over one year and averaging.
 
 fpWind = fopen('../Input/Raw/Wind.csv','r'); fgetl(fpWind);
@@ -53,8 +53,29 @@ wind_mv = [mean(wind_mv,2) var(wind_mv,0,2)];
 Eprices = [mean_p_f mean_p_r*2 mean_p_r/2];
     
 Sdata=struct('wind_unif',wind_unif,'Eprices',Eprices,'wind_mv',wind_mv);
-save(['../Input/Sdata_' num2str(D) '_' num2str(D2)],'Sdata');
+save(['../Input/Sdata_r' num2str(D) '_' num2str(D2)],'Sdata');
 
+%% Generating real samples
+fpWind = fopen('../Input/Raw/Wind.csv','r'); fgetl(fpWind);
+wind = fscanf(fpWind,'%*d,%*d,%f,%*f,%*f',[1 days*24*realizations]); wind = wind';
+fclose(fpWind);
+p_f = load('../Input/Raw/price_da.txt'); p_f=p_f(1:days*24*realizations)';
+p_r = load('../Input/Raw/price_rt.txt'); p_r=p_r(1:days*24*realizations)';
+wind = reshape(wind,24,[]);
+
+if D<24
+    wind = reshape(sum(reshape(wind,floor(24/D),[]),1),D,[]); 
+    p_f = reshape(mean(reshape(p_f,floor(24/D),[]),1),D,[]);
+    p_r = reshape(mean(reshape(p_r,floor(24/D),[]),1),D,[]);
+end
+
+wind_mv = [mean(wind,2) var(wind,0,2)];
+Eprices = [mean(p_f,2) 2*mean(p_r,2) 0.5*mean(p_r,2)];
+
+Sdata=struct('Eprices',Eprices,'wind_mv',wind_mv);
+sample = [wind(:)  p_f(:)  p_r(:)*2 p_r(:)/2];
+dlmwrite(['../Input/sample_r' num2str(D) '_' num2str(D2) '.csv'],sample);
+save(['../Input/Sdata_r' num2str(D) '_' num2str(D2)],'Sdata');
 %% Crap
 % 
 % sample_2004 = [wind p_f p_r*2 p_r/2];
@@ -70,69 +91,52 @@ save(['../Input/Sdata_' num2str(D) '_' num2str(D2)],'Sdata');
 % dlmwrite('real_data\four_sample.csv',four_sample);
 
 %Generating probabilities on support of various wind and price processes
-% four_sample = load('real_data\four_sample.csv');
-% W_level = 4;
-% price_level = 3;
-% days=60;
-% D=4;
+% four_sample = load('real_data\four_sample.csv'); W_level = 4; price_level
+% = 3; days=60; D=4;
 % 
-% wind_sup = [20 40 60 80];
-% prices_sup = [10 46 82]';
-% %wind_sup = 5+linspace(0,100,W_level);
-% %prices_sup = linspace(10,100,6)'; 
-% prices_sup = [prices_sup prices_sup*2 prices_sup/2];
+% wind_sup = [20 40 60 80]; prices_sup = [10 46 82]'; %wind_sup =
+% 5+linspace(0,100,W_level); %prices_sup = linspace(10,100,6)'; prices_sup
+% = [prices_sup prices_sup*2 prices_sup/2];
 % 
-% wind_p = zeros(D,W_level);
-% prices_p = zeros(price_level,D);
+% wind_p = zeros(D,W_level); prices_p = zeros(price_level,D);
 % 
-% temp = 0:D:days*D-1;
-% for ind=1:D
-%     wind_p(ind,:) = hist(four_sample(ind+temp,1),wind_sup);
-%     wind_p(ind,:) = wind_p(ind,:)/sum(wind_p(ind,:));
+% temp = 0:D:days*D-1; for ind=1:D
+%     wind_p(ind,:) = hist(four_sample(ind+temp,1),wind_sup); wind_p(ind,:)
+%     = wind_p(ind,:)/sum(wind_p(ind,:));
 %     
-%     prices_comp = four_sample(ind+temp,2:4);
-%     distance_mat = zeros(days,price_level);
-%     for ind2 = 1:price_level
-%         distance_mat(:,ind2) = abs(prices_comp(:,1)-prices_sup(ind2,1))+(abs(prices_comp(:,2)-prices_sup(ind2,2))/2 + abs(prices_comp(:,3)-prices_sup(ind2,3))*2)/2;
-%     end
-%     [~,distance_min] = min(distance_mat,[],2);
+%     prices_comp = four_sample(ind+temp,2:4); distance_mat =
+%     zeros(days,price_level); for ind2 = 1:price_level
+%         distance_mat(:,ind2) =
+%         abs(prices_comp(:,1)-prices_sup(ind2,1))+(abs(prices_comp(:,2)-pr
+%         ices_sup(ind2,2))/2 +
+%         abs(prices_comp(:,3)-prices_sup(ind2,3))*2)/2;
+%     end [~,distance_min] = min(distance_mat,[],2);
 %     prices_p(:,ind)=hist(distance_min,1:price_level);
 %     prices_p(:,ind)=prices_p(:,ind)/sum(prices_p(:,ind));
 % end
 % 
 % % Generating sample path
 % 
-% % wind_sup = [16 50 83]; 
-% % wind_p = [0.441 0.254 0.305 ;
-% %           0.283 0.233 0.483 ;
-% %           0.450 0.183 0.367 ;
-% %           0.533 0.050 0.417 ];
-% %     
-% % prices_sup = [ 40.000 80.000 20.000 ;
-% %            80   160 40;
-% %            120  240 60];
-% % prices_p = [0.7800 0.3260 0.7570 0.2550;
-% %             0.2105 0.5300 0.2000 0.5780;
-% %             0.0095 0.1440 0.0430 0.1665]; 
+% % wind_sup = [16 50 83]; % wind_p = [0.441 0.254 0.305 ; %
+% 0.283 0.233 0.483 ; %           0.450 0.183 0.367 ; %           0.533
+% 0.050 0.417 ]; % % prices_sup = [ 40.000 80.000 20.000 ; %            80
+% 160 40; %            120  240 60]; % prices_p = [0.7800 0.3260 0.7570
+% 0.2550; %             0.2105 0.5300 0.2000 0.5780; %             0.0095
+% 0.1440 0.0430 0.1665]; 
 % 
-% wind_cp = cumsum(wind_p,2);
-% prices_cp = cumsum(prices_p',2);
+% wind_cp = cumsum(wind_p,2); prices_cp = cumsum(prices_p',2);
 % 
-% realizations = 100;
-% D = 4; 
-% days = 60*realizations;
-% wind = zeros(D*days,1);
-% prices = zeros(D*days,3);
-% temp = 0:D:D*days-1;
-% for ind = 1:D
-%     L1 = repmat(rand(days,1),1,length(wind_sup));
-%     L2 = repmat(wind_cp(ind,:),days,1) ;
-%     [~,index] = min((L1-L2).*(L1-[zeros(days,1) L2(:,1:end-1)]),[],2);
-%     wind( ind+ temp) = wind_sup (index);
+% realizations = 100; D = 4; days = 60*realizations; wind =
+% zeros(D*days,1); prices = zeros(D*days,3); temp = 0:D:D*days-1; for ind =
+% 1:D
+%     L1 = repmat(rand(days,1),1,length(wind_sup)); L2 =
+%     repmat(wind_cp(ind,:),days,1) ; [~,index] =
+%     min((L1-L2).*(L1-[zeros(days,1) L2(:,1:end-1)]),[],2); wind( ind+
+%     temp) = wind_sup (index);
 %     
-%     L1 = repmat(rand(days,1),1,size(prices_sup,1));
-%     L2 = repmat(prices_cp(ind,:),days,1);
-%     [~,index] = min((L1-L2).*(L1-[zeros(days,1) L2(:,1:end-1)]),[],2);
+%     L1 = repmat(rand(days,1),1,size(prices_sup,1)); L2 =
+%     repmat(prices_cp(ind,:),days,1); [~,index] =
+%     min((L1-L2).*(L1-[zeros(days,1) L2(:,1:end-1)]),[],2);
 %     prices(ind+temp,:) = prices_sup(index,:);
 % end
 % 
@@ -141,34 +145,31 @@ save(['../Input/Sdata_' num2str(D) '_' num2str(D2)],'Sdata');
 % price_synth = prices_p'*prices_sup;
 % dlmwrite('real_data/price_synth3.csv',price_synth);
 % 
-% wind_s_mean = wind_p*wind_sup';
-% wind_s_var = wind_p*(wind_sup'.^2) - wind_s_mean.^2;
-% wind_synth = [wind_s_mean wind_s_var];
+% wind_s_mean = wind_p*wind_sup'; wind_s_var = wind_p*(wind_sup'.^2) -
+% wind_s_mean.^2; wind_synth = [wind_s_mean wind_s_var];
 % dlmwrite('real_data/wind_synth3.csv',wind_synth);
 % 
 % price_same = repmat(mean(price_synth),D,1);
 % dlmwrite('real_data/price_same3.csv',price_same);
 % dlmwrite('real_data/same3_sample.csv',[wind repmat(price_same,days,1)]);
 
-% data = load('real_data/sample_four.csv');
-% data = data(1:end-4,:);
-% wind = reshape(data(:,1),4,[]);
-% % for ind=1:4
-% %     subplot(2,2,ind);
-% %     hist(wind(ind,:))
-% % end
+% data = load('real_data/sample_four.csv'); data = data(1:end-4,:); wind =
+% reshape(data(:,1),4,[]); % for ind=1:4 %     subplot(2,2,ind); %
+% hist(wind(ind,:)) % end
 
-% L=1e4;
-% k=rand(L,1);
-% cp_data = [[k (1-k)]*mean_w' repmat(mean_p,[L 1])];
+% L=1e4; k=rand(L,1); cp_data = [[k (1-k)]*mean_w' repmat(mean_p,[L 1])];
 % dlmwrite('real_data/sample_sbcp.csv',cp_data);
 % dlmwrite('real_data/price_sbcp.csv',ones(4,1)*mean_p);
-% dlmwrite('real_data/wind_sbcp.csv',ones(4,1)*[mean_w(1) var(cp_data(:,1))]);
+% dlmwrite('real_data/wind_sbcp.csv',ones(4,1)*[mean_w(1)
+% var(cp_data(:,1))]);
 
-% ncp_data = [k.*repmat(wind2(:,1),[L/4 1])+(1-k).*repmat(wind2(:,2),[L/4 1]) ...
+% ncp_data = [k.*repmat(wind2(:,1),[L/4 1])+(1-k).*repmat(wind2(:,2),[L/4
+% 1]) ...
 %     repmat(Eprices,[L/4 1])+repmat(sd_p,[L/4 1]).*randn(L,3)];
 % dlmwrite('real_data/sample_sb.csv',ncp_data);
 % dlmwrite('real_data/price_sb.csv',Eprices);
-% dlmwrite('real_data/wind_sb.csv',[mean(wind2,2) [var(ncp_data(1:4:end,1));...
-%     var(ncp_data(2:4:end,1)) ; var(ncp_data(3:4:end,1)); var(ncp_data(4:4:end,1))]]);
+% dlmwrite('real_data/wind_sb.csv',[mean(wind2,2)
+% [var(ncp_data(1:4:end,1));...
+%     var(ncp_data(2:4:end,1)) ; var(ncp_data(3:4:end,1));
+%     var(ncp_data(4:4:end,1))]]);
 
