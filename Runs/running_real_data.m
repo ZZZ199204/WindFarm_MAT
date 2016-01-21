@@ -5,11 +5,11 @@ realizations=6;
 opt='r4_1';
 capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 
-D = 4;
+D = 24;
 L = 60*D;
 beta=0.99;
 M=20;
-no_of_sims=3;
+no_of_sims=5;
 error_const=0.3;
 results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
 %%
