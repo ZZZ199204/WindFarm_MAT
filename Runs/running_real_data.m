@@ -85,7 +85,6 @@ for cap_ind = 1:length(capacity)
     parfor iRealizations=1:realizations
         iRealizations
 
-        lin_mat = modelpcGenerator(sysParams,val_LQR);
         MPCParams = sysParams;
         SdataR = Sdata;
         lqg_la = pol_sim(sysParams);
