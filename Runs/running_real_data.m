@@ -1,11 +1,12 @@
 %% Running the experiment with real data
 init;
 
+if ~exist('D','var'); D=24; end
 realizations=6; 
-opt='r4_1';
+opt=sprintf('r%d_1',D);
 capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 
-D = 24;
+
 L = 60*D;
 beta=0.99;
 M=20;
@@ -17,7 +18,6 @@ if ~exist('opt','var'); opt='4'; end
 if ~exist('results_file','var'); results_file='temp'; end
 if ~exist('capacity','var'); capacity = 0:50:150; end
 if ~exist('realizations','var'); realizations = 1; end
-if ~exist('D','var'); D=4; end
 if ~exist('L','var'); L = 240; end
 if ~exist('beta','var'); beta=0.999; end
 if ~exist('etas','var'); etas=[1 1]; end

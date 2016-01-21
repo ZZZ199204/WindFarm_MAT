@@ -1,5 +1,5 @@
 clc; clear all; 
-D=4; 
+D=24; 
 D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
 days=60;
 L = days*D2*D; 
@@ -62,6 +62,8 @@ fclose(fpWind);
 p_f = load('../Input/Raw/price_da.txt'); p_f=p_f(1:days*24*realizations)';
 p_r = load('../Input/Raw/price_rt.txt'); p_r=p_r(1:days*24*realizations)';
 wind = reshape(wind,24,[]);
+p_f = reshape(p_f,24,[]);
+p_r = reshape(p_r,24,[]);
 
 if D<24
     wind = reshape(sum(reshape(wind,floor(24/D),[]),1),D,[]); 
