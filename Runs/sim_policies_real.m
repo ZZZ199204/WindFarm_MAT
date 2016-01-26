@@ -1,19 +1,3 @@
-%% Running the experiment with real data
-init;
-
-if ~exist('D','var'); D=24; end
-realizations=12; 
-error_const=0.3;
-opt=sprintf('r%d_1',D);
-capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
-
-
-L = 60*D;
-beta=0.99;
-M=25;
-no_of_sims=5;
-
-results_file=sprintf('results/%s_results_&d.txt',opt,floor(10*error_const)); overwrite = 1;
 %%
 if ~exist('opt','var'); opt='4'; end
 if ~exist('results_file','var'); results_file='temp'; end
@@ -27,7 +11,12 @@ if ~exist('batinitial','var'); batinitial = 0; end
 if ~exist('beta2','var'); beta2 = 1; end
 if ~exist('M','var'); M = 10; end
 if ~exist('no_of_sims','var'); no_of_sims = 30; end
+if ~exist('D','var'); D=4; end
+
 discount = beta.^(0:L-1);
+
+opt=sprintf('r%d_1',D);
+results_file=sprintf('results/%s_results_&d.txt',opt,floor(10*error_const)); overwrite = 1;
 
 data_file=['../Input/sample_',opt,'.csv'];
 sdata_file=['../Input/Sdata_',opt];
