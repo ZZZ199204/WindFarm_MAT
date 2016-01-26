@@ -16,7 +16,7 @@ if ~exist('D','var'); D=4; end
 discount = beta.^(0:L-1);
 
 opt=sprintf('r%d_1',D);
-results_file=sprintf('results/%s_results_&d.txt',opt,floor(10*error_const)); overwrite = 1;
+results_file=sprintf('results/%s_results_%d.txt',opt,floor(10*error_const)); overwrite = 1;
 
 data_file=['../Input/sample_',opt,'.csv'];
 sdata_file=['../Input/Sdata_',opt];
@@ -101,8 +101,8 @@ for cap_ind = 1:length(capacity)
             MPCParams.wind_stats = reshape(rand(Miter+1,MPCParams.no_of_sims).*...
                 repmat(wind_pred_unif(:,2)-wind_pred_unif(:,1),1,MPCParams.no_of_sims)+...
                 repmat(wind_pred_unif(:,1),1,MPCParams.no_of_sims),[],1);
-            MPCParams.prices_stats = reshape(permute(repmat(price_mean,[1 1 MPCParams.no_of_sims])+...
-                randn(MPCParams.M+1,3,MPCParams.no_of_sims).*repmat(price_sd,[1 1 MPCParams.no_of_sims]),[1 3 2]),[],3);
+            MPCParams.prices_stats = max(reshape(permute(repmat(price_mean,[1 1 MPCParams.no_of_sims])+...
+                randn(MPCParams.M+1,3,MPCParams.no_of_sims).*repmat(price_sd,[1 1 MPCParams.no_of_sims]),[1 3 2]),[],3),2);
             MPCParams.state_initial = lqg_la.state;
             MPCParams.batinitial = lqg_la.battery;
             lin_mat = modelpcGenerator(MPCParams,val_LQR,1);
