@@ -2,17 +2,18 @@
 init;
 
 if ~exist('D','var'); D=24; end
-realizations=6; 
+realizations=12; 
+error_const=0.3;
 opt=sprintf('r%d_1',D);
 capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 
 
 L = 60*D;
 beta=0.99;
-M=20;
+M=25;
 no_of_sims=5;
-error_const=0.3;
-results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
+
+results_file=sprintf('results/%s_results_&d.txt',opt,floor(10*error_const)); overwrite = 1;
 %%
 if ~exist('opt','var'); opt='4'; end
 if ~exist('results_file','var'); results_file='temp'; end
@@ -116,7 +117,7 @@ for cap_ind = 1:length(capacity)
             MPCParams.state_initial = lqg_la.state;
             MPCParams.batinitial = lqg_la.battery;
             lin_mat = modelpcGenerator(MPCParams,val_LQR,1);
-            temp = modelpclinear(MPCParams.M,0,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,no_of_sims);
+            temp = modelpclinear(MPCParams.M,0,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,MPCParams.no_of_sims);
             lqg_la=lqg_la.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
 
             %Implementing the small battery policy

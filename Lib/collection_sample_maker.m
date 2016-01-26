@@ -1,9 +1,9 @@
 clc; clear all; 
-D=24; 
+D=4; 
 D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
 days=60;
 L = days*D2*D; 
-realizations = 6;
+realizations = 12;
 %% For 24 hour periods statistics - collecting over one year and averaging.
 
 fpWind = fopen('../Input/Raw/Wind.csv','r'); fgetl(fpWind);
@@ -64,6 +64,10 @@ p_r = load('../Input/Raw/price_rt.txt'); p_r=p_r(1:days*24*realizations)';
 wind = reshape(wind,24,[]);
 p_f = reshape(p_f,24,[]);
 p_r = reshape(p_r,24,[]);
+p_f(p_f<=0)=5;
+p_r(p_r<=0) = p_f(p_r<=0);
+
+
 
 if D<24
     wind = reshape(sum(reshape(wind,floor(24/D),[]),1),D,[]); 
