@@ -45,9 +45,11 @@ end
 prof = zeros(length(capacity),9);
 
 sysParams = struct('M',M,'D',D,'no_of_sims',no_of_sims,...
-    'beta',beta,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
+    'beta',beta,'beta2',beta2,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
     'state_initial',contract_initial,'batinitial',batinitial);
-    
+        lqg_la = pol_sim(sysParams);
+        sb_pol = pol_sim(sysParams); 
+
 for cap_ind = 1:length(capacity)
     C = capacity(cap_ind)
     ramping_C = ramping*C;
@@ -65,7 +67,7 @@ for cap_ind = 1:length(capacity)
     
     profind2=zeros(realizations,9);
 
-    parfor iRealizations=1:realizations
+    for iRealizations=1:realizations
         iRealizations
         lqg_la = pol_sim(sysParams);
         sb_pol = pol_sim(sysParams);
@@ -74,7 +76,8 @@ for cap_ind = 1:length(capacity)
       
         for ind = 1:L
             %Implementing any step lookahead verification
-            temp = modelpclinear(M,ind-1,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,no_of_sims);
+            temp = modelpclinear(M,ind-1,[wind_realization(ind);lqg_la.battery;lqg_la.state]...
+                ,prices_realization(ind,:),D,lin_mat,no_of_sims);
             lqg_la=lqg_la.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
 
             %Implementing the small battery policy

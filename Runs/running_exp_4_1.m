@@ -1,13 +1,20 @@
 init;
 
-realizations=16; 
+
 opt='4_1';
-capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 D = 4;
-L = 360*D;
+capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
+realizations=16; 
+% realizations = 1;
+% results_file=sprintf('results/%s_results_trace.rxt',opt); overwrite=1;
+% capacity = 30;
+% L=120*D
+
+
 beta=0.99;
-M=10;
-no_of_sims=30;
+M=48;
+no_of_sims=40;
+L = 360*D;
 results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
 sim_policies
 

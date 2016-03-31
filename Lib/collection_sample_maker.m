@@ -1,5 +1,5 @@
 clc; clear all; 
-D=4; 
+D=24; 
 D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
 days=60;
 L = days*D2*D; 
