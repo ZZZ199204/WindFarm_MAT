@@ -1,9 +1,9 @@
 clc; clear all; 
-D=24; 
+D=4; 
 D2=1; %expansion factor. Example if want constant statistics, D = 24. We do, D = 1, D2 = 24. 
-days=60;
+days=360;
 L = days*D2*D; 
-realizations = 12;
+realizations = 16;
 %% For 24 hour periods statistics - collecting over one year and averaging.
 
 fpWind = fopen('../Input/Raw/Wind.csv','r'); fgetl(fpWind);
@@ -29,7 +29,7 @@ if (D==1) %stationary wind, constant prices
 end
 
 %% Generating samples
-nSamples = L*realizations+D*D2*300;
+nSamples = L*realizations+D*D2*1600;
 nDaysSamples = floor(nSamples/D2/D);
 
 % wind_unif = reshape(permute(repmat(wind_unif,[1 1 D2])/D2,[3 1 2]),[],2);
@@ -66,8 +66,6 @@ p_f = reshape(p_f,24,[]);
 p_r = reshape(p_r,24,[]);
 p_f(p_f<=0)=5;
 p_r(p_r<=0) = p_f(p_r<=0);
-
-
 
 if D<24
     wind = reshape(sum(reshape(wind,floor(24/D),[]),1),D,[]); 

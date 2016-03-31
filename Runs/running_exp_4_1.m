@@ -12,7 +12,7 @@ realizations=16;
 
 
 beta=0.99;
-M=48;
+M=40;
 no_of_sims=40;
 L = 360*D;
 results_file=sprintf('results/%s_results.txt',opt); overwrite = 1;
