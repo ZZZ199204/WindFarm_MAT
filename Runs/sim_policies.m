@@ -67,7 +67,7 @@ for cap_ind = 1:length(capacity)
     
     profind2=zeros(realizations,9);
 
-    for iRealizations=1:realizations
+    parfor iRealizations=1:realizations
         iRealizations
         lqg_la = pol_sim(sysParams);
         sb_pol = pol_sim(sysParams);
@@ -95,7 +95,7 @@ for cap_ind = 1:length(capacity)
 end
 
 if length(capacity)>=2
-    asymptote = min(prof(1,3)+(prof(2,3)-prof(1,3))/(capacity(2)-capacity(1))*(capacity-capacity(1)),prof(:,1));
+    asymptote = min(prof(1,3)+(prof(2,3)-prof(1,3))/(capacity(2)-capacity(1))*(capacity'-capacity(1)),prof(:,1));
 else
     asymptote = prof(1,1);
 end
