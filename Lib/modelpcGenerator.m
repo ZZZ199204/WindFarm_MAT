@@ -26,7 +26,7 @@ if ~isfield(MPCParams,'beta'); MPCParams.beta = 0.99; end; beta=MPCParams.beta;
 if ~isfield(MPCParams,'beta2'); MPCParams.beta2 = 1; end; beta2=MPCParams.beta2;
 if ~isfield(MPCParams,'etas'); MPCParams.etas = [1 1]; end; etas = MPCParams.etas;
 if ~isfield(MPCParams,'ramping'); MPCParams.ramping = C; end; ramping = MPCParams.ramping;
-if (C==0); C=1e-5; end
+if (C==0); C=1e-7; end
 if (ramping==0); ramping = 1e-5; end
 if ~exist('D_real','var'); D_real=D; end;
 
@@ -38,28 +38,28 @@ prices_est = zeros(no_of_sims*3,M);
 
 for t_start = 1:D_real
     
-    if no_of_sims == 1
-        wt = [wind_stats(t_start:D); wind_stats(1:t_start-1)]';
-        wt = repmat(wt,[1,ceil(M/D)+1]);
-        wt = wt(1:M+1);
-        prices_est = [price_stats(t_start:D,:); price_stats(1:t_start-1,:)]';
-        prices_est = repmat(prices_est,[1,ceil(M/D)]);
-        prices_est = prices_est(:,1:M);
-        wt = fliplr(wt);
-        prices_est = fliplr(prices_est);
-
-    else
+%     if no_of_sims == 1
+%         wt = [wind_stats(t_start:D); wind_stats(1:t_start-1)]';
+%         wt = repmat(wt,[1,ceil(M/D)+1]);
+%         wt = wt(1:M+1);
+%         prices_est = [price_stats(t_start:D,:); price_stats(1:t_start-1,:)]';
+%         prices_est = repmat(prices_est,[1,ceil(M/D)]);
+%         prices_est = prices_est(:,1:M);
+%         wt = fliplr(wt);
+%         prices_est = fliplr(prices_est);
+% 
+%     else
         for ind = 1:no_of_sims
-            wt(ind,:) = fliplr([wind_stats((ind-1)*M+t_start:ind*M+1); wind_stats((ind-1)*M+1:(ind-1)*M+t_start-1)]');
+            wt(ind,:) = fliplr([wind_stats((ind-1)*(M+1)+t_start:ind*(M+1)); wind_stats((ind-1)*(M+1)+1:(ind-1)*(M+1)+t_start-1)]');
             prices_est(3*(ind-1)+1:3*ind,:) = fliplr([price_stats((ind-1)*M+t_start:ind*M,:); price_stats((ind-1)*M+1:(ind-1)*M+t_start-1,:)]');
         end
-    end
+%     end
     discount = fliplr(beta.^[0:M-1]);
 
 
     % x=[l_{M-1} -> l_{0} , bp_{M-1} -> bp_{-1} ,s_{M-1} -> s_{-D} ]
     lb_mpc = [-inf*ones(1,M), zeros(1,M+1+M+D)]'; %Lower and upper bounds
-    ub_mpc = [inf*ones(1,M), C*ones(1,M+1) , 400*ones(1,M+D)]';
+    ub_mpc = [inf*ones(1,M), C*ones(1,M+1) , 600*ones(1,M+D)]';
     lb_mpc = repmat(lb_mpc,[no_of_sims,1]);
     ub_mpc = repmat(ub_mpc,[no_of_sims,1]);
 
@@ -69,7 +69,7 @@ for t_start = 1:D_real
         Aeq_mpc((ind-1)*(D+1)+1,(ind-1)*(3*M+D+1)+2*M+1)=1; %Initial battery contraint
         Aeq_mpc((ind-1)*(D+1)+2:ind*(D+1),(ind-1)*(3*M+D+1)+3*M+2:ind*(3*M+1+D)) = eye(D); % Initial contract conditions
             
-        if ind<no_of_sims
+        if ind<no_of_sims %Initial action (charging action and contracting action) is the same in all no_of_sims
             Aeq_temp(2*(ind-1)+1,(ind-1)*(3*M+D+1)+2*M) = 1 ; Aeq_temp(2*(ind-1)+1,ind*(3*M+D+1)+2*M) = -1 ;
             Aeq_temp(2*(ind-1)+2,(ind-1)*(3*M+D+1)+3*M+1) = 1 ; Aeq_temp(2*(ind-1)+2,ind*(3*M+D+1)+3*M+1) = -1 ;
         end

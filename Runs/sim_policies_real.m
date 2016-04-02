@@ -23,7 +23,7 @@ sdata_file=['../Input/Sdata_',opt];
 
 Mdata = load(data_file);
 wind = Mdata(:,1);
-prices = Mdata(:,2:4);
+prices = ones(size(Mdata(:,2:4),1),1)*[2 3 1];
 
 Sdata=load(sdata_file); Sdata=Sdata.Sdata; 
 Sdata.D=D; Sdata.beta=beta; 
@@ -52,7 +52,7 @@ end
 prof = zeros(length(capacity),9);
 
 sysParams = struct('M',M,'D',D,'no_of_sims',no_of_sims,...
-    'beta',beta,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
+    'beta',beta,'beta2',beta2,'L',L,'prices_stats',prices_stats,'wind_stats',wind_stats,'etas',etas,...
     'state_initial',contract_initial,'batinitial',batinitial);
     
 for cap_ind = 1:length(capacity)
@@ -72,7 +72,7 @@ for cap_ind = 1:length(capacity)
     
     profind2=zeros(realizations,9);
 
-    parfor iRealizations=1:realizations
+    for iRealizations=1:realizations
         iRealizations
 
         MPCParams = sysParams;
@@ -85,9 +85,9 @@ for cap_ind = 1:length(capacity)
         for ind = 1:L-D
             
             % generating wrong prediction values
-            wind_pred_unif = wind_realization(ind:min(ind+1+M,end)); %lower and upper limit
+            wind_pred_unif = wind_realization(ind:min(ind+M,end)); %lower and upper limit
             Miter = size(wind_pred_unif,1)-1;
-            price_pred = prices_realization(ind:min(ind+M+1,end),:);
+            price_pred = prices_realization(ind:min(ind+M,end),:);
             error_pred = error_const*ones(size(wind_pred_unif)); error_pred(1:D+1)=linspace(0,error_const,D+1);
             
             wind_pred_unif = (1+(2*rand(size(wind_pred_unif))-1).*error_pred).*wind_pred_unif; %generating the means
@@ -98,22 +98,29 @@ for cap_ind = 1:length(capacity)
             
             %Implementing any step lookahead verification
             MPCParams.M = Miter;
+            wind_pred_unif_shifted = wind_pred_unif; 
             MPCParams.wind_stats = reshape(rand(Miter+1,MPCParams.no_of_sims).*...
-                repmat(wind_pred_unif(:,2)-wind_pred_unif(:,1),1,MPCParams.no_of_sims)+...
-                repmat(wind_pred_unif(:,1),1,MPCParams.no_of_sims),[],1);
-            MPCParams.prices_stats = max(reshape(permute(repmat(price_mean,[1 1 MPCParams.no_of_sims])+...
-                randn(MPCParams.M+1,3,MPCParams.no_of_sims).*repmat(price_sd,[1 1 MPCParams.no_of_sims]),[1 3 2]),[],3),2);
+                repmat(wind_pred_unif_shifted(:,2)-wind_pred_unif_shifted(:,1),1,MPCParams.no_of_sims)+...
+                repmat(wind_pred_unif_shifted(:,1),1,MPCParams.no_of_sims),[],1);
+            price_mean_shifted = price_mean; 
+            price_sd_shifted = price_sd; 
+            MPCParams.prices_stats = max(reshape(permute(repmat(price_mean_shifted,[1 1 MPCParams.no_of_sims])+...
+                randn(MPCParams.M+1,3,MPCParams.no_of_sims).*repmat(price_sd_shifted,[1 1 MPCParams.no_of_sims]),[1 3 2]),[],3),2);
+            
             MPCParams.state_initial = lqg_la.state;
             MPCParams.batinitial = lqg_la.battery;
+            
             lin_mat = modelpcGenerator(MPCParams,val_LQR,1);
+            
             temp = modelpclinear(MPCParams.M,0,[wind_realization(ind);lqg_la.battery;lqg_la.state],prices_realization(ind,:),D,lin_mat,MPCParams.no_of_sims);
             lqg_la=lqg_la.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
-
+            
             %Implementing the small battery policy
             SdataR.Eprices(1,:) = price_mean(D+1,:);
             SdataR.wind_unif(1,:) = wind_pred_unif(D+1,:);
             temp = opt_small_battery(SdataR,0,[wind_realization(ind);sb_pol.battery;sb_pol.state],prices_realization(ind,:));
             sb_pol = sb_pol.update(temp,wind_realization(ind),prices_realization(ind,:),ind);
+            
          end
         %Genie Policy
         genieOut = genie (wind_realization,prices_realization,sysParams);   
