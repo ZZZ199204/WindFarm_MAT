@@ -23,7 +23,7 @@ sdata_file=['../Input/Sdata_',opt];
 
 Mdata = load(data_file);
 wind = Mdata(:,1);
-prices = ones(size(Mdata(:,2:4),1),1)*[2 3 1];
+prices = Mdata(:,2:4);
 
 Sdata=load(sdata_file); Sdata=Sdata.Sdata; 
 Sdata.D=D; Sdata.beta=beta; 
@@ -72,7 +72,7 @@ for cap_ind = 1:length(capacity)
     
     profind2=zeros(realizations,9);
 
-    for iRealizations=1:realizations
+    parfor iRealizations=1:realizations
         iRealizations
 
         MPCParams = sysParams;
