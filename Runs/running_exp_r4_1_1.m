@@ -4,11 +4,12 @@ init;
 D=4; 
 % realizations = 1;
 % capacity = [0 20 150 500];
+% L = 1000;
 error_const=0.1;
 realizations=12; 
 capacity = [0 linspace(1e-2,20,3) linspace(30,150,4) linspace(200,500,3)];
 L = 60*D;
-% L = 10;
+
 beta=0.99;
 M=30;
 no_of_sims=30;
